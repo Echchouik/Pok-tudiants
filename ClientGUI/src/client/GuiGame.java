@@ -15,6 +15,8 @@ import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.SwingUtilities;
+
 import TileEngine.Map;
 import TileEngine.TileLayer;
 
@@ -48,7 +50,7 @@ public class GuiGame extends javax.swing.JFrame {
 	//PrintStream out;
 	OutputStreamWriter out;
 	BufferedWriter bw;
-	Map frame;
+	Map mapWindow;
     int nbRows = 0;
     int nbCols = 0;
     char[][] map;
@@ -117,13 +119,19 @@ public class GuiGame extends javax.swing.JFrame {
             nmap = data[1].split("-");
              jComboBoxGameList.addItem(nmap[2]);
             jTextAreaConsol.append(response+"\n");
+            
+        }
+        else if(response.contains("cannot")) {
+            jTextAreaConsol.append(response+"\n");
+            //isJoined = false;
         }else {
         	for (int j = 0; j < nbCols; j++) {
 				map[i][j] = (response.charAt(j));
 			}
         	i++;
         	if(i == nbRows) {
-        		frame = new Map(map, nbRows, nbCols);
+        		mapWindow = new Map(map, nbRows, nbCols);
+        		SwingUtilities.updateComponentTreeUI(mapWindow);
         	}
         }
     }

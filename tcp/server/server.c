@@ -44,8 +44,9 @@ static void app(void)
    llist gamelist = NULL;
    llist gamejoin = NULL;
    char map[NB_ROWS][NB_COLS];
-
-   
+   llist tmpFind;
+   size_t lineCount = 0;
+   char *line = NULL;
 
    char* token;
 
@@ -181,34 +182,70 @@ static void app(void)
                         token = strtok(NULL, " ");
                         j++;
                      }
-                     llist tmpFind;
+
                      tmpFind = find_game(gamelist, token);
-                     if (tmpFind == NULL)
+                     if (tmpFind != NULL)
                      {
-                       puts("game found");
+		       send_message_back(clients, client, actual, "cannot create game ! Game exist\n");
                      }
-                     gamelist = ajouterEnTete(gamelist, token, clients[actual - 1]);
+			else
+			{
+                     gamelist = ajouterEnTete(gamelist, token);
+                     tmpFind = find_game(gamelist, token);
+                      /* Try to open the file */
+                         FILE *fp = fopen("map.txt", "r");
+                         if (!fp)
+                         {
+                             fprintf(stderr, "Unable to open %s: %s\n",
+                                     "map.txt", strerror(errno));
+                             exit(-1);
+                         }
+
+                         /* Our array of lines is actually a pointer to an array of character        
+                            pointers, one for each line, so keep track of the number of lines. */
+                        
+                         while ((line = readMap(fp)) != NULL)
+                         {
+                             char **temp = realloc(tmpFind->map, sizeof(*tmpFind->map) * lineCount + 1);
+                             if (!temp)
+                             {
+                                 fprintf(stderr, "Unable to realloc for lines!\n");
+                                 /* Cleanup the existing memory */
+                                 size_t i = 0;
+                                 for (; i < lineCount; ++i)
+                                 {
+                                     free(tmpFind->map[i]);
+                                 }
+                                 free(tmpFind->map);
+                                 fclose(fp);
+                                 exit(-1);
+                             }
+                             /* Assign our lines variable to point to the reallocated memory */
+                             tmpFind->map = temp;
+                             /* Set our newly allocated pointer to point to the line returned */
+                             tmpFind->map[lineCount++] = line;
+                         }
+                         // END READ MAP
+
                      Client cli;
                      cli = gamelist->tabplayer[0];
-                     int nbgame = number_game(gamelist);
-                     if(nbgame > 0)
-                     {
-                        send_message_back(clients, client, actual, "game created\n");
-                     }
-                     else
-                     {
-                        send_message_back(clients, client, actual, "cannot create game\n");
-                     }
+			send_message_back(clients, client, actual, "Game created\n");
+			}
                   }
                   else if (strstr(buffer, "join game"))
                   {
                      token = strtok(buffer, " ");
                      int j = 0;
+
                      while(j < 2)
                      {
                         token = strtok(NULL, " ");
                         j++;
                      }
+			tmpFind = find_game(gamelist, token);
+			if((tmpFind != NULL)&&(tmpFind->nmbr_player)<5)
+			{
+					printf("nmbr_player : %d\n",tmpFind->nmbr_player );
                      gamejoin=join_game(gamelist, token, clients[actual - 1]);
                      nbgame = number_game(gamelist);
 
@@ -226,68 +263,36 @@ static void app(void)
                         strncat(header, "\n", sizeof(header) - strlen(header) - 1);
                         printf("game joined   %s\n", gamejoin->name);
                         send_message_back(clients, client, actual, header);
-                        /* Try to open the file */
-                         FILE *fp = fopen("map.txt", "r");
-                         if (!fp)
-                         {
-                             fprintf(stderr, "Unable to open %s: %s\n",
-                                     "map.txt", strerror(errno));
-                             exit(-1);
-                         }
 
-                         /* Our array of lines is actually a pointer to an array of character        
-                            pointers, one for each line, so keep track of the number of lines. */
-                         char **lines = NULL;
-                         size_t lineCount = 0;
-                         char *line = NULL;
-                         while ((line = readMap(fp)) != NULL)
-                         {
-                             char **temp = realloc(lines, sizeof(*lines) * lineCount + 1);
-                             if (!temp)
-                             {
-                                 fprintf(stderr, "Unable to realloc for lines!\n");
-                                 /* Cleanup the existing memory */
-                                 size_t i = 0;
-                                 for (; i < lineCount; ++i)
-                                 {
-                                     free(lines[i]);
-                                 }
-                                 free(lines);
-                                 fclose(fp);
-                                 exit(-1);
-                             }
-                             /* Assign our lines variable to point to the reallocated memory */
-                             lines = temp;
-                             /* Set our newly allocated pointer to point to the line returned */
-                             lines[lineCount++] = line;
-                         }
-				
-			int x = my_rand(0,NB_ROWS);
-			int y = my_rand(0,NB_COLS);
-			lines[x][y]='0';
-				
+                        int x = my_rand(0,NB_ROWS);
+                        int y = my_rand(0,NB_COLS);
+                        tmpFind->map[x][y]='0';
 
                          /* Print our lines and clean up */
                          for (int j = 0; j < lineCount; j++)
                          {
-                             //printf("%s\n", lines[j]);
-                           char* mapline = malloc(sizeof(line[j] + 1));
-                           strcpy(mapline, lines[j]);
+                           //printf("%s\n", tmpFind->map[j]);
+                           char* mapline = malloc(sizeof(tmpFind->map[j] + 1));
+                           strcpy(mapline, tmpFind->map[j]);
                            strcat(mapline, "\n");
                            send_message_back(clients, client, actual, mapline);
+                           //send_chat_message(clients, client, actual, mapline);
                              /* Free the line's memory allocated in the readLine function */
-                             free(lines[j]);
                          }
 
                          /* Free the array that held the lines */
-                         free(lines);
 
-                         fclose(fp);
                      }
                      else
                      {
                         send_message_back(clients, client, actual, "cannot join game\n");
                      }
+                 	}
+					else
+                     {
+                        send_message_back(clients, client, actual, "cannot join game\n");
+                     }
+
                   }
                   else
                   {

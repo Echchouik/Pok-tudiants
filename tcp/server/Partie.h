@@ -12,13 +12,14 @@ struct game
 {
 	char* name;
 	int nmbr_player;
+	char** map;
 	struct Client tabplayer[5];
 	struct game *nxt;
 };
  
 typedef game* llist;
 
-llist ajouterEnTete(llist liste, char*  name, Client player);
+llist ajouterEnTete(llist liste, char*  name);
 void afficherListe(llist liste);
 int number_game(llist liste);
 llist find_game(llist liste, char* name_game);
