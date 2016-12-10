@@ -46,6 +46,7 @@ static void end_connection(int sock);
 static int read_client(SOCKET sock, char *buffer);
 static void write_client(SOCKET sock, const char *buffer);
 static void send_message_back(Client *clients, Client client, int actual, const char *buf);
+static void send_chat_message(Client *clients, Client sender, int actual, const char *buf);
 static void remove_client(Client *clients, int to_remove, int *actual);
 static void clear_clients(Client *clients, int actual);
 static char *readMap(FILE *fp);

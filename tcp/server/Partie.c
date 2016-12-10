@@ -1,22 +1,19 @@
 #include "Partie.h"
 #include "server.h"
 
-llist ajouterEnTete(llist liste, char*  name, Client player)
+llist ajouterEnTete(llist liste, char*  name)
 {
     /* On crée un nouvel élément */
     game* new_game = malloc(sizeof(game));
  
-    /* On assigne la valeur au nouvel élément */
+
     new_game->name=(char*) malloc(sizeof(char*));
     strcpy(new_game->name, name);
-    new_game->nmbr_player+=1;
-    new_game->tabplayer[(new_game->nmbr_player-1)]=player;
-    
+    new_game->nmbr_player=0;
+    new_game->map=NULL;
+     new_game->nxt = liste;
  
-    /* On assigne l'adresse de l'élément suivant au nouvel élément */
-    new_game->nxt = liste;
- 
-    /* On retourne la nouvelle liste, i.e. le pointeur sur le premier élément */
+
     return new_game;
 }
 
@@ -69,7 +66,7 @@ llist join_game(llist liste,char* name_game, Client player)
 game* gamejoin=find_game(liste,name_game);
 if((gamejoin->nmbr_player)<=5)
 {
-    gamejoin->nmbr_player+=1;
+    gamejoin->nmbr_player=gamejoin->nmbr_player+1;
     gamejoin->tabplayer[(gamejoin->nmbr_player-1)]=   player;
     return gamejoin;
 }
